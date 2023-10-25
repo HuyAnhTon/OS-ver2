@@ -84,7 +84,7 @@ string read_offset(string offset, int n, const BYTE sector[512]) {
 }
 
 
-void printBootSectorInformation(const BYTE sector[512]) {
+void printInformation(const BYTE sector[512]) {
 
     for (int i = 0; i < 512; i++) {
 
@@ -113,100 +113,36 @@ string FAT_type(const BYTE sector[512]) {
 
 }
 
-int bytes_per_sector(const BYTE sector[512]) {
-
-    // Offset B, doc 2 bytes
-
-    string offset = "B";
-    int n = 2;
-
-    string data = read_offset(offset, n, sector);
-    return Hex2Dec(data);
-}
-
-int sectors_per_cluster(const BYTE sector[512]) {
-
-    // Offset D, doc 1 byte
-
-    string offset = "D";
-    int n = 1;
-
-    string data = read_offset(offset, n, sector);
-    return Hex2Dec(data);
-}
-
-int sectors_BootSector(const BYTE sector[512]) {
-
-    // offset E, doc 2 byte
-    string offset = "E";
-    int n = 2;
-
-    string data = read_offset(offset, n, sector);
-    return Hex2Dec(data);
-}
-
-int quantity_FAT(const BYTE sector[512]) {
-
-    // offset E, doc 2 byte
-    string offset = "10";
-    int n = 1;
-
-    string data = read_offset(offset, n, sector);
-    return Hex2Dec(data);
-}
-
-int total_sectors_on_disk(const BYTE sector[512]) {
-
-    // offset E, doc 2 byte
-    string offset = "20";
-    int n = 4;
-
-    string data = read_offset(offset, n, sector);
-    return Hex2Dec(data);
-}
-
-int sectors_per_fat(const BYTE sector[512]) {
-
-    // offset E, doc 2 byte
-    string offset = "24";
-    int n = 4;
-
-    string data = read_offset(offset, n, sector);
-    return Hex2Dec(data);
-}
-
-
-
-
 int main(int argc, char** argv)
 {
 
     BYTE sector[512];
     ReadSector(L"\\\\.\\D:", 0, sector);
 
-    printBootSectorInformation(sector);
+    printInformation(sector);
+
+    int bytes_per_sector = Hex2Dec(read_offset("B", 2, sector));
+    int sectors_per_cluster = Hex2Dec(read_offset("D", 1, sector));
+    int sectors_BootSector = Hex2Dec(read_offset("E", 2, sector));
+    int quantity_FAT = Hex2Dec(read_offset("10", 1, sector));
+    int first_cluster_RDET = Hex2Dec(read_offset("2C", 4, sector));
+    int sectors_per_fat = Hex2Dec(read_offset("24", 4, sector));
+    int total_sectors_on_disk = Hex2Dec(read_offset("20", 4, sector));
 
 
     cout << "1. FAT type: " << FAT_type(sector) << endl;
-    cout << "2. Bytes / 1 sector: " << dec <<  bytes_per_sector(sector) << endl;
-    cout << "3. Sectors / 1 cluster (sC): " << dec << sectors_per_cluster(sector) << endl;
-    cout << "4. Sectors in BootSector (sB): " << dec << sectors_BootSector(sector) << endl;
-    cout << "5. Quantity of FAT (nF): " << dec <<  quantity_FAT(sector) << endl;
-    cout << "6. Sectors of RDET: " << endl;
-    cout << "7. Total sectors on disk: " << dec << total_sectors_on_disk(sector) << endl;
-    cout << "8. Sectors / 1 FAT (sF): " << dec << sectors_per_fat(sector) << endl;
-    cout << "9. First sector of FAT 1: " << dec << sectors_BootSector(sector) << endl;
-    cout << "10. First sector of RDET: " << dec << sectors_BootSector(sector) + quantity_FAT(sector) * sectors_per_fat(sector) << endl;
-    cout << "11. First sector of Data: " << dec << sectors_BootSector(sector) + quantity_FAT(sector) * sectors_per_fat(sector) << endl;
+    cout << "2. Bytes / 1 sector: " << dec << bytes_per_sector << endl;
+    cout << "3. Sectors / 1 cluster (sC): " << dec << sectors_per_cluster << endl;
+    cout << "4. Sectors in BootSector (sB): " << dec << sectors_BootSector << endl;
+    cout << "5. Quantity of FAT (nF): " << dec <<  quantity_FAT << endl;
+    cout << "6. First cluster of RDET: " << dec << first_cluster_RDET << endl;
+    cout << "7. Total sectors on disk: " << dec << total_sectors_on_disk << endl;
+    cout << "8. Sectors / 1 FAT (sF): " << dec << sectors_per_fat << endl;
+    cout << "9. First sector of FAT 1: " << dec << sectors_BootSector << endl;
+    cout << "10. First sector of RDET: " << dec << sectors_BootSector + quantity_FAT * sectors_per_fat << endl;
+    cout << "11. First sector of Data: " << dec << sectors_BootSector + quantity_FAT * sectors_per_fat << endl;
 
 
-    BYTE fat[512];
-    int fat_read_point = (102 - 1) * 512;
-    ReadSector(L"\\\\.\\D:", fat_read_point, fat);
-    printBootSectorInformation(fat);
-
-    string s = "1a";
-    int a = Hex2Dec(s);
 
     return 0;
 }
